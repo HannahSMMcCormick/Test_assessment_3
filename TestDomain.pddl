@@ -1,4 +1,4 @@
-(define(domain<avatar journey>))
+(define(domain avatar-journey))
 
 (:requirements 
 :strips 
@@ -21,18 +21,20 @@ location bending mission threat
 (at-spirit-animal ?l - location)
 
 (connected ?from ?to - location)
-(blocked-by ?t-threat ?from ?to - location)
+(blocked-by ?t - threat ?from ?to - location)
 
 (safe-location ?l - location)
-(teacher-at ?b - bending) ?l - location)
+(teacher-at ?b - bending ?l - location)
 (learned ?b - bending)
+(next-to-learn ?b - bending)
+(next-in-order ?c ?n - bending)
 
 (mission-at ?m - mission ?l - location)
 (mission-requires ?m - mission ?b - bending)
 (mission-done ?m - mission)
 
 (threat-at ?t - threat ?l - location)
-(fight-requires -t - threat ?b - bending)
+(fight-requires ?t - threat ?b - bending)
 (threat-defeated ?t - threat)
 )
 
@@ -40,22 +42,24 @@ location bending mission threat
 
 (avatar-energy)
 (spirit-animal-energy)
-(max-energy)
-
-(next-to-learn ?b - bending)
-(next-in-order ?current ?next - bending)
+(max-avatar-energy)
+(max-spirit-animal-energy)
 )
 
 ;Travelling from location to location
+
+
 (:action travel
 :parameters (?from ?to - location)
-:preconditions(and 
+:preconditions(and
 (at-avatar ?from)
 (at-spirit-animal ?from)
 (connected ?from ?to)
 (>= (spirit-animal-energy) 2)
+
+
 (forall (?t - threat)
-(not (blocked-by ?t from ?to)
+(not (blocked-by ?t ?from ?to)
 ))
 
 :effect (and
@@ -138,16 +142,22 @@ location bending mission threat
 (at-avatar ?l)
 (at-spirit ?l)
 (safe-location ?l)
+
+(or (<(avatar-energy)(max-avatar-energy))
+
+(<(spirit-animal-energy)(max-spirit-animal-energy))
+)
 )
 :effects (and
-(when (<avatar-energy)(max-energy)
+(when (<(avatar-energy)(max-avatar-energy))
 (increase (avatar-energy)1)
 )
-(when (<(spirit-animal-energy)(max-energy))
+(when (< (spirit-animal-energy)(max-spirit-animal-energy))
 (increase (spirit-animal-energy)1)
 
 )
 
 )
 
+)
 )
