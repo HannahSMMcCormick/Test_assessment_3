@@ -1,11 +1,12 @@
-(define(domain avatar-journey))
+(define (domain avatar-journey)
 
 (:requirements 
 :strips 
 :typing 
 :negative-preconditions
 :numeric-fluents
-:conditional-effects)
+:conditional-effects
+:adl)
 
 (:types
 
@@ -15,7 +16,7 @@ location bending mission threat
 
 
 
-(: predicates
+(:predicates
 
 (at-avatar ?l - location)
 (at-spirit-animal ?l - location)
@@ -51,7 +52,7 @@ location bending mission threat
 
 (:action travel
 :parameters (?from ?to - location)
-:preconditions(and
+:precondition(and
 (at-avatar ?from)
 (at-spirit-animal ?from)
 (connected ?from ?to)
@@ -59,7 +60,7 @@ location bending mission threat
 
 
 (forall (?t - threat)
-(not (blocked-by ?t ?from ?to)
+(not (blocked-by ?t ?from ?to))
 ))
 
 :effect (and
@@ -72,7 +73,7 @@ location bending mission threat
 )
 )
 
-(:action Train 
+(:action train 
 :parameters(?b - bending ?l - location)
 :precondition (and
 (at-avatar ?l)
@@ -80,7 +81,7 @@ location bending mission threat
 (teacher-at ?b ?l) 
 (next-to-learn ?b)
 (not(learned ?b))
-(>=(avatar-bending)3)
+(>= (avatar-energy)3)
 )
 :effect (and
 (learned ?b)
@@ -97,15 +98,16 @@ location bending mission threat
 
 (:action fight
 :parameters 
-(?t - threat ?b - bending ?l - location ?from ?to - location
+(?t - threat ?b - bending ?from ?to - location
 )
 :precondition(and
-(at-avatar ?l)
-(at-spirit-animal ?l)
-(threat-at ?t ?l)
-(fight_requires ?t ?b)
+(at-avatar ?from)
+(at-spirit-animal ?from)
+(connected ?from ?to)
+(threat-at ?t ?to)
+(fight-requires ?t ?b)
 (learned ?b)
-(blocked-by ?t ?b)
+(blocked-by ?t ?from ?to)
 (>= (avatar-energy)4)
 (not(threat-defeated ?t))
 
@@ -113,23 +115,28 @@ location bending mission threat
 :effect (and
 (threat-defeated ?t)
 (not(blocked-by ?t ?from ?to))
+(not(blocked-by ?t ?to ?from))
 (decrease(avatar-energy)4)
 )
 
 )
 
-(:action mission
-:parameters(?m - mission ?b - bending ?l - location)
+(:action complete-mission
+:parameters(?m - mission ?l - location)
 :precondition (and
 (at-avatar ?l)
 (at-spirit-animal ?l)
 (mission-at ?m ?l)
-(mission-requires ?m ?b)
-(learned ?b)
+(forall (?required - bending)
+(or 
+(not (mission-requires ?m ?required))
+(learned ?required)
+)
+)
 (not (mission-done ?m))
 (>= (avatar-energy)2)
 )
-:effects (and
+:effect (and
 (mission-done ?m)
 (decrease (avatar-energy)2)
 
@@ -140,19 +147,19 @@ location bending mission threat
 :parameters(?l - location)
 :precondition (and 
 (at-avatar ?l)
-(at-spirit ?l)
+(at-spirit-animal ?l)
 (safe-location ?l)
 
-(or (<(avatar-energy)(max-avatar-energy))
+(or (< (avatar-energy) (max-avatar-energy))
 
-(<(spirit-animal-energy)(max-spirit-animal-energy))
+(< (spirit-animal-energy) (max-spirit-animal-energy))
 )
 )
-:effects (and
-(when (<(avatar-energy)(max-avatar-energy))
+:effect (and
+(when (< (avatar-energy) (max-avatar-energy))
 (increase (avatar-energy)1)
 )
-(when (< (spirit-animal-energy)(max-spirit-animal-energy))
+(when (< (spirit-animal-energy) (max-spirit-animal-energy))
 (increase (spirit-animal-energy)1)
 
 )
